@@ -1,0 +1,2 @@
+[submodule "/home/jetson/catkin_ws/src/rplidar_ros"]
+	ignore = untracked

@@ -1,0 +1,35 @@
+<launch>
+  <!-- Arguments -->
+ 
+  <arg name="set_base_frame" default="base_footprint"/>
+  <arg name="set_odom_frame" default="odom"/>
+  <arg name="set_map_frame"  default="map"/>
+
+
+    <!-- Load the robot model into the parameter server -->
+    <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find my_robot_model)/urdf/robot_root.xacro'"/>
+    
+    <!-- Motor Controller -->
+    <node pkg="my_motor_controller" type="motor_driver_ros_interface.py" name="motor_controller_ros" output="screen"/>
+    
+    <!-- Differential Drive Controller  -->
+    <node pkg="differential_driver" type="twist_to_motors.py" name="twist_to_motors" output="screen"/>
+    <node pkg="differential_driver" type="diff_tf.py" name="diff_tf" output="screen"/>
+  
+    <!-- Joint State Publisher - Publishes Joint Positions -->
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+  
+    <!-- Robot State Publisher  - Uses URDF and Joint States to compute Transforms -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    
+    <!-- RPLidar A1M8 -->
+  <include file="$(find rplidar_ros)/launch/rplidar.launch"/>
+
+  <!-- Gmapping -->
+  <node pkg="gmapping" type="slam_gmapping" name="gmapping" output="screen">
+    <param name="base_frame" value="$(arg set_base_frame)"/>
+    <param name="odom_frame" value="$(arg set_odom_frame)"/>
+    <param name="map_frame"  value="$(arg set_map_frame)"/>
+    <rosparam command="load" file="$(find bringup)/param/gmapping_params.yaml" />
+  </node>
+</launch>

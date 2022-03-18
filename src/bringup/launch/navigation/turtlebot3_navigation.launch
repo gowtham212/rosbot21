@@ -1,0 +1,54 @@
+<launch>
+  <!-- Arguments -->
+  
+  <arg name="open_rviz" default="true"/>
+  <arg name="move_forward_only" default="false"/>
+
+  <!-- Load the robot model into the parameter server -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find my_robot_model)/urdf/robot_root.xacro'"/>
+    
+    <!-- Motor Controller -->
+    <node pkg="my_motor_controller" type="motor_driver_ros_interface.py" name="motor_controller_ros" output="screen"/>
+    
+    <!-- Differential Drive Controller  -->
+    <node pkg="differential_driver" type="twist_to_motors.py" name="twist_to_motors" output="screen"/>
+    <node pkg="differential_driver" type="diff_tf.py" name="diff_tf" output="screen"/>
+  
+    <!-- Joint State Publisher - Publishes Joint Positions -->
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+  
+    <!-- Robot State Publisher  - Uses URDF and Joint States to compute Transforms -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    
+    <!-- RPLidar A1M8 -->
+  <include file="$(find rplidar_ros)/launch/rplidar.launch"/>
+
+  <!-- Map server -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(find my_robot_model)/maps/a21.yaml"/>
+  
+
+  <!-- AMCL - Localization -->
+<node pkg="amcl" type="amcl" name="amcl" output="screen">
+  <rosparam file="$(find bringup)/config/amcl.yaml" command="load"/>
+</node>
+
+  <!-- move_base -->
+  <node pkg="move_base" type="move_base" name="move_base" output="screen">
+    <rosparam file="$(find bringup)/config/costmap_common_params.yaml" command="load" ns="global_costmap"/>
+    <rosparam file="$(find bringup)/config/costmap_common_params.yaml" command="load" ns="local_costmap"/>
+    <rosparam file="$(find bringup)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find bringup)/config/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find bringup)/config/global_planner_params.yaml" command="load" />
+    <rosparam file="$(find bringup)/config/move_base_params.yaml" command="load" />
+
+    <!-- GLOBAL PLANNERS -->
+    <!--param name="base_global_planner" value="navfn/NavfnROS" /-->
+    <param name="base_global_planner" value="global_planner/GlobalPlanner"/>
+    
+    <!-- LOCAL PLANNERS -->
+    <rosparam file="$(find bringup)/config/dwa_local_planner.yaml" command="load"/>
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS"/>
+
+  </node>
+
+</launch>
